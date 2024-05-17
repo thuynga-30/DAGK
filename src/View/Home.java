@@ -7,6 +7,7 @@ import javax.swing.table.TableColumnModel;
 
 import java.awt.*;
 import java.util.List;
+import java.util.*;
 import Model.DanhBa;
 import Database.*;
 import Controller.FileTypeFilter;
@@ -17,6 +18,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.System.Logger;
+import java.nio.charset.StandardCharsets;
+import java.sql.ClientInfoStatus;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -58,6 +64,7 @@ public class Home extends JFrame {
     Connection con ;
     ResultSet rs;
     Statement st;
+    private JButton btnExportXml;
     public Home() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         contentPane = new JPanel();
@@ -401,7 +408,7 @@ public class Home extends JFrame {
         phrTable = new JTable(phrModel);
     
         JScrollPane phrScrollPane = new JScrollPane(phrTable);
-        phrScrollPane.setBounds(0, 0, 1483, 845);
+        phrScrollPane.setBounds(0, 0, 1483, 849);
         phr.setLayout(null);
         phr.add(phrScrollPane);
       
@@ -430,7 +437,7 @@ public class Home extends JFrame {
                     Khambenh frameKhambenh= new Khambenh(info);
                     frameKhambenh.setVisible(true);
                 }
-        	}
+                dispose();        	}
         });
         profileTable.getColumnModel().getColumn(1).setCellRenderer(new ImageRenderer());
         profileTable.getColumnModel().getColumn(1).setPreferredWidth(200);
@@ -509,8 +516,56 @@ public class Home extends JFrame {
             }
         });
         btnSave.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btnSave.setBounds(520, 301, 117, 29);
+        btnSave.setBounds(340, 301, 117, 29);
         profile.add(btnSave);
+        
+        btnExportXml = new JButton("Export XML");
+        btnExportXml.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            StringBuilder builder= new StringBuilder();
+            try (Connection con = JDBCUtil.getConnection();
+   	             Statement st = con.createStatement();
+   	             ResultSet rs = st.executeQuery("SELECT \"Name\", \"Nam_Sinh\", \"Dia_Chi\", \"sDT\" FROM public.\"danhBa\"")) {
+   	
+   	            while (rs.next()) {
+   	                builder.append("<User>\r\n");
+   	                builder.append("<Fullname>").append(rs.getString("Name")).append("</Fullname>\r\n");
+   	                builder.append("<YearofBirth>").append(rs.getString("Nam_Sinh")).append("</YearofBirth>\r\n");
+   	                builder.append("<Address>").append(rs.getString("Dia_Chi")).append("</Address>\r\n");
+   	                builder.append("<Phonenumber>").append(rs.getString("sDT")).append("</Phonenumber>\r\n");
+   	                builder.append("</User>\r\n");
+   	            }
+   	        } catch (Exception ex) {
+   	            JOptionPane.showMessageDialog(null, "Error!");
+   	
+   	        }
+	        String body= builder.toString();
+	        String XML ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+	                + "<userList>\r\n"
+	                + body
+	                + "</userList>";
+	        // Lưu vào tệp
+	        try {
+	        	
+	            FileOutputStream fos = new FileOutputStream("user.xml");
+	            byte[] data = XML.getBytes();
+	            fos.write(data);
+	            fos.close();
+	            // Hiển thị bảng dữ liệu từ tệp XML
+	            
+	            XMLTableViewer xmlTableViewer = new XMLTableViewer(new File("user.xml"));
+	            xmlTableViewer.setVisible(true);
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            JOptionPane.showMessageDialog(null, "Error exporting XML data", "Error", JOptionPane.ERROR_MESSAGE);
+	        }
+	    
+	       
+	    }
+	});
+        btnExportXml.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btnExportXml.setBounds(523, 301, 117, 29);
+        profile.add(btnExportXml);
     }
 
     // Trình kết xuất tùy chỉnh cho việc hiển thị hình ảnh

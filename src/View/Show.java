@@ -10,6 +10,8 @@ import Controller.ChatServer;
 
 import java.awt.Color;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -69,7 +71,7 @@ public class Show extends JFrame {
 				SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                      String IP="192.168.1.8";
+                      String IP="192.168.1.00";
                       ChatClient chatClient= new ChatClient(IP);
                       chatClient.setVisible(true);
                       

@@ -18,11 +18,24 @@ import javax.swing.JButton;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.PrintWriter;
 import java.awt.event.ActionEvent;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTextArea;
 import javax.swing.ImageIcon;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 public class Khambenh extends JFrame {
 
@@ -35,10 +48,11 @@ public class Khambenh extends JFrame {
     private JTextField redate;
     private JTextPane tsb;
     private JTextPane don;
-    private JComboBox Blood;
+    private JComboBox<String> Blood;
     private JPanel panel;
     private String infor;
 
+   
 
     public Khambenh(String infor) {
         setTitle("Thông tin chi tiết");
@@ -66,10 +80,9 @@ public class Khambenh extends JFrame {
         lblNewLabel_6.setBounds(254, 179, 92, 20);
         panel.add(lblNewLabel_6);
 
-        Blood = new JComboBox();
-        Blood.setModel(new DefaultComboBoxModel(
-        new String[]{"O+", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"}));
-        Blood.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        Blood = new JComboBox<>();
+        Blood.setModel(new DefaultComboBoxModel<>(new String[]{"O+", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"}));
+Blood.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         Blood.setBackground(Color.WHITE);
         Blood.setBounds(377, 173, 85, 32);
         panel.add(Blood);
@@ -125,12 +138,12 @@ public class Khambenh extends JFrame {
         JButton btnSave = new JButton("Exit");
         btnSave.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		Home home= new Home();
+        		Home home = new Home();
         		home.setVisible(true);
         		dispose();
+        		
         	}
         });
-
         btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSave.setBounds(445, 702, 85, 43);
         panel.add(btnSave);
@@ -148,7 +161,7 @@ public class Khambenh extends JFrame {
         txtBsi = new JTextField();
         txtBsi.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtBsi.setColumns(10);
-        txtBsi.setBounds(377, 558, 366, 32);
+txtBsi.setBounds(377, 558, 366, 32);
         panel.add(txtBsi);
 
         date = new JTextField();
@@ -221,25 +234,31 @@ public class Khambenh extends JFrame {
             int userSelection = fileChooser.showSaveDialog(this);
 
             if (userSelection == JFileChooser.APPROVE_OPTION) {
-                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-                PrintWriter writer = new PrintWriter(filePath);
+                File fileToSave = fileChooser.getSelectedFile();
+                String filePath = fileToSave.getAbsolutePath();
+                
+                if (filePath.endsWith(".xml")) {
+                    exportDataToXML(filePath);
+                } else {
+                    try (PrintWriter writer = new PrintWriter(filePath)) {
+                        // Lưu thông tin infor vào file
+                        writer.println("Thông tin bệnh nhân:");
+                        writer.println(infor);
+                        writer.println();
 
-                // Lưu thông tin infor vào file
-                writer.println("Thông tin bệnh nhân:");
-                writer.println(infor);
-                writer.println();
+                        // Lưu các thông tin nhập từ giao diện người dùng vào file
+                        writer.println("Blood Type: " + Blood.getSelectedItem());
+                        writer.println("Weight: " + txtWeight.getText() + "kg");
+                        writer.println("Height: " + txtHeight.getText() + "cm");
+                        writer.println("Blood Pressure: " + txtBP.getText() + " mmHg");
+                        writer.println("Doctor's Note: " + tsb.getText());
+                        writer.println();
 
-                // Lưu các thông tin nhập từ giao diện người dùng vào file
-                writer.println("Blood Type: " + Blood.getSelectedItem());
-                writer.println("Weight: " + txtWeight.getText()+"kg");
-                writer.println("Height: " + txtHeight.getText()+"cm");
-                writer.println("Blood Pressure: " + txtBP.getText()+" mmHg");
-                writer.println("Doctor's Note:: " + tsb.getText());
-                writer.println();
+                        writer.println();
 
-                writer.println();
-
-                writer.close();
+                        writer.close();
+                    }
+                }
 
                 JOptionPane.showMessageDialog(this, "Thông tin đã được lưu vào file thành công.");
                 Home hm = new Home();
@@ -251,5 +270,54 @@ public class Khambenh extends JFrame {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi lưu file.");
         }
+    }
+
+    private void exportDataToXML(String filePath) throws ParserConfigurationException, TransformerException {
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+
+        // Root element
+        Document doc = docBuilder.newDocument();
+        Element rootElement = doc.createElement("PatientInformation");
+        doc.appendChild(rootElement);
+
+        // Patient info
+        Element info = doc.createElement("Information");
+        info.appendChild(doc.createTextNode(infor));
+        rootElement.appendChild(info);
+
+        // Blood Type
+        Element bloodType = doc.createElement("BloodType");
+        bloodType.appendChild(doc.createTextNode((String) Blood.getSelectedItem()));
+        rootElement.appendChild(bloodType);
+
+        // Weight
+        Element weight = doc.createElement("Weight");
+        weight.appendChild(doc.createTextNode(txtWeight.getText() + "kg"));
+        rootElement.appendChild(weight);
+
+        // Height
+        Element height = doc.createElement("Height");
+        height.appendChild(doc.createTextNode(txtHeight.getText() + "cm"));
+        rootElement.appendChild(height);
+
+        // Blood Pressure
+        Element bloodPressure = doc.createElement("BloodPressure");
+        bloodPressure.appendChild(doc.createTextNode(txtBP.getText() + " mmHg"));
+        rootElement.appendChild(bloodPressure);
+
+        // Doctor's Note
+        Element doctorsNote = doc.createElement("DoctorsNote");
+        doctorsNote.appendChild(doc.createTextNode(tsb.getText()));
+        rootElement.appendChild(doctorsNote);
+
+        // Write the content into XML file
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        DOMSource source = new DOMSource(doc);
+        StreamResult result = new StreamResult(new File(filePath));
+
+        transformer.transform(source, result);
     }
 }

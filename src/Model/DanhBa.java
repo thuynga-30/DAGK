@@ -1,5 +1,7 @@
 package Model;
 
+import java.util.Arrays;
+
 public class DanhBa {
 	private String ten;
 	private int nS;
@@ -46,6 +48,20 @@ public class DanhBa {
 	}
 	public void setAnh(byte[] anh) {
 		this.anh = anh;
+	}
+	public String getXML() {
+		return "<userList>\r\n"
+				+ "    <Fullname>"+ten+" </Fullname>\r\n"
+				+ "    <YearofBirth>"+nS+"</YearofBirth>\r\n"
+				+ "    <Address>"+dC+"</Address>\r\n"
+				+ "    <Phonenumber>"+sDT+"</Phonenumber>\r\n"
+				+ "</userList>";
+		
+	}
+	@Override
+	public String toString() {
+		return "DanhBa [ten=" + ten + ", nS=" + nS + ", dC=" + dC + ", sDT=" + sDT 
+				+ "]";
 	}
 	
 }

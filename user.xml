@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<userList>
+<User>
+<Fullname>Thúy Nga</Fullname>
+<YearofBirth>2004</YearofBirth>
+<Address>Quảng Bình</Address>
+<Phonenumber>0368456264</Phonenumber>
+</User>
+<User>
+<Fullname>Quốc Thắng</Fullname>
+<YearofBirth>2005</YearofBirth>
+<Address>Quảng Trị</Address>
+<Phonenumber>0855510705</Phonenumber>
+</User>
+<User>
+<Fullname>Phước My</Fullname>
+<YearofBirth>2005</YearofBirth>
+<Address>Quảng Nam</Address>
+<Phonenumber>0123456789</Phonenumber>
+</User>
+<User>
+<Fullname>Quang Nhân</Fullname>
+<YearofBirth>2005</YearofBirth>
+<Address>Quảng Bình</Address>
+<Phonenumber>0385650513</Phonenumber>
+</User>
+</userList>
