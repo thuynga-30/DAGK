@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.*;
 import Model.DanhBa;
 import Database.*;
+import Controller.ChatServer;
 import Controller.FileTypeFilter;
 import Controller.danhBA;
 import java.awt.event.ActionListener;
@@ -38,6 +39,7 @@ public class Home extends JFrame {
     private JPanel Menu;
     private JPanel home;
     private JPanel profile;
+    private JPanel contact;
     private JButton btnHome;
     private JButton btnPhr;
     private JButton btnProfile;
@@ -65,8 +67,12 @@ public class Home extends JFrame {
     ResultSet rs;
     Statement st;
     private JButton btnExportXml;
+    private JScrollPane scrollPane;
+    private JTextField textField;
+    private JButton btnNewButton;
     public Home() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         contentPane = new JPanel();
         contentPane.setBackground(Color.WHITE);
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -88,10 +94,11 @@ public class Home extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 home.setVisible(true);
                 profile.setVisible(false);
-                phr.setVisible(false); // Đảm bảo panel phr bị ẩn đi
+                phr.setVisible(false); 
+                contact.setVisible(true);
             }
         });
-        btnHome.setBounds(62, 312, 188, 59);
+        btnHome.setBounds(62, 333, 188, 59);
         Menu.add(btnHome);
 
         btnPhr = new JButton("PHR");
@@ -104,7 +111,7 @@ public class Home extends JFrame {
                 phr.setVisible(true); 
             }
         });
-        btnPhr.setBounds(62, 502, 188, 59);
+        btnPhr.setBounds(62, 513, 188, 59);
         Menu.add(btnPhr);
 
         btnProfile = new JButton("PROFILE");
@@ -117,7 +124,7 @@ public class Home extends JFrame {
                 phr.setVisible(false);
             }
         });
-        btnProfile.setBounds(62, 407, 188, 59);
+        btnProfile.setBounds(62, 428, 188, 59);
         Menu.add(btnProfile);
 
         JButton btnPhr_1 = new JButton("");
@@ -194,13 +201,11 @@ public class Home extends JFrame {
         JButton btnContact = new JButton("CONTACT");
         btnContact.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		Show show = new Show();
-        		show.setVisible(true);
         	}
         });
         btnContact.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnContact.setBackground(Color.WHITE);
-        btnContact.setBounds(62, 607, 188, 59);
+        btnContact.setBounds(62, 604, 188, 59);
         Menu.add(btnContact);
 
         JPanel HOME = new JPanel();
@@ -230,8 +235,6 @@ public class Home extends JFrame {
         profile = new JPanel();
         profile.setBackground(Color.WHITE);
         HOME.add(profile, "name_2083268793865000");
-        
-      
         profile.setLayout(null);
         
         phone = new JTextField();
@@ -334,6 +337,27 @@ public class Home extends JFrame {
         phr.setBackground(new Color(255, 255, 255));
         HOME.add(phr, "name_2083268808146200");
         phr.setLayout(null);
+        
+        contact = new JPanel();
+        HOME.add(contact, "name_471364038699400");
+        contact.setLayout(null);
+        
+        scrollPane = new JScrollPane();
+        scrollPane.setBounds(0, 10, 1239, 673);
+        contact.add(scrollPane);
+        
+        JTextArea textArea = new JTextArea();
+        scrollPane.setViewportView(textArea);
+        
+        textField = new JTextField();
+        textField.setColumns(10);
+        textField.setBounds(0, 693, 989, 68);
+        contact.add(textField);
+        
+        btnNewButton = new JButton("SEND");
+        btnNewButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        btnNewButton.setBounds(1007, 693, 140, 68);
+        contact.add(btnNewButton);
         
         menu = new JLabel("MENU");
         menu.setFont(new Font("Segoe UI", Font.BOLD, 14));

@@ -5,6 +5,9 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.pbkdf2.DataLengthException;
+
 import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -16,6 +19,12 @@ import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -35,18 +44,6 @@ public class SignUp extends JFrame {
 	Statement st;
 	private JTextField fname;
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					SignUp frame = new SignUp();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
 
 	public SignUp() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -109,75 +106,20 @@ public class SignUp extends JFrame {
 
 		JButton btnSignUp = new JButton("Sign Up");
 		btnSignUp.addActionListener(new ActionListener() {
-
 			public void actionPerformed(ActionEvent e) {
-
-				String Name, Phone, Pass;
-				int rowsAffected = 0;
-
-				try {
-					Class.forName(driver);
-					con = DriverManager.getConnection(url, username, password);
-					st = con.createStatement();
-
-					if ("".equals(phone.getText()) || phone.getText().length() != 10) {
-						JOptionPane.showMessageDialog(new JFrame(), "Phone Number is required", "Error",
-								JOptionPane.ERROR_MESSAGE);
-					} else if ("".equals(pass.getText())) {
-						JOptionPane.showMessageDialog(new JFrame(), "Password is required", "Error",
-								JOptionPane.ERROR_MESSAGE);
-					} else if ("".equals(fname.getText())) {
-						JOptionPane.showMessageDialog(new JFrame(), "FullName is required", "Error",
-								JOptionPane.ERROR_MESSAGE);
-					} else {
-						Name = fname.getText();
-						Phone = phone.getText();
-						Pass = pass.getText();
-						try {
-							String checkQuery = "SELECT * FROM public.\"user\" WHERE \"phonenumber\" = '" + Phone + "'";
-							ResultSet rs = st.executeQuery(checkQuery);
-							while (rs.next()) {
-								
-								JOptionPane.showMessageDialog(new JFrame(), "Phone Number already exists", "Error",
-										JOptionPane.ERROR_MESSAGE);
-							}
-							 if (rs != null) rs.close();
-						} catch (Exception e2) {
-							// TODO: handle exception
-						}
-						String query = "INSERT INTO public.\"user\"(\"Fullname\",\"phonenumber\", \"password\") VALUES ('"
-								+ Name + "','" + Phone + "','" + Pass + "');";
-						rowsAffected = st.executeUpdate(query);
-						if (rowsAffected > 0) {
-							JOptionPane.showMessageDialog(new JFrame(), "User registered successfully", "Success",
-									JOptionPane.INFORMATION_MESSAGE);
-							LogIn logIn = new LogIn();
-							logIn.setVisible(true);
-							dispose();
-						} else {
-							JOptionPane.showMessageDialog(new JFrame(), "Failed to register user", "Error",
-									JOptionPane.ERROR_MESSAGE);
-						}
-						phone.setText("");
-						pass.setText("");
-						fname.setText("");
-
-					}
-
-				} catch (Exception e1) {
-					e1.printStackTrace();
-
-				} finally {
-					try {
-						
-						if (st != null)
-							st.close();
-						if (con != null)
-							con.close();
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
+				String phonenumber = phone.getText();
+				String password = new String(pass.getPassword());
+				if (phonenumber.isEmpty() && phonenumber.length()!=10) {
+					JOptionPane.showMessageDialog(new JFrame(), "Phone Number is required", "Error",
+							JOptionPane.ERROR_MESSAGE);
 				}
+				
+				boolean isRegistered = registerUser(username, password);
+		        if (isRegistered) {
+		            JOptionPane.showMessageDialog(null, "Registration Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+		        } else {
+		            JOptionPane.showMessageDialog(null, "Failed to register user. Please try again later.", "Registration Failed", JOptionPane.ERROR_MESSAGE);
+		        }
 			}
 		});
 		btnSignUp.setForeground(Color.BLACK);
@@ -209,4 +151,23 @@ public class SignUp extends JFrame {
 		lblNewLabel_3_1.setBounds(30, 98, 115, 26);
 		panel.add(lblNewLabel_3_1);
 	}
+	
+
+    private boolean registerUser(String username, String password) {
+        try (Socket socket = new Socket("192.168.1.23", 12345);
+             OutputStream output = socket.getOutputStream();
+             ObjectOutputStream objectOutput = new ObjectOutputStream(output);
+             InputStream input = socket.getInputStream();
+             ObjectInputStream objectInput = new ObjectInputStream(input)) {
+
+            objectOutput.writeObject(new String[]{username, password});
+            objectOutput.flush();
+
+            return objectInput.readBoolean();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
 }

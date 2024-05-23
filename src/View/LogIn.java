@@ -15,6 +15,16 @@ import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,7 +35,7 @@ import java.awt.event.ActionEvent;
 public class LogIn extends JFrame {
 
 	private JPanel contentPane;
-	private JTextField textField;
+	private JTextField phonenumber;
 	private JPasswordField passwordField;
 	String driver ="org.postgresql.Driver";
     String url = "jdbc:postgresql://localhost:5432/Java" ;
@@ -105,10 +115,10 @@ public class LogIn extends JFrame {
 		lblNewLabel_4.setBounds(31, 263, 115, 26);
 		left.add(lblNewLabel_4);
 		
-		textField = new JTextField();
-		textField.setBounds(31, 189, 388, 42);
-		left.add(textField);
-		textField.setColumns(10);
+		phonenumber = new JTextField();
+		phonenumber.setBounds(31, 189, 388, 42);
+		left.add(phonenumber);
+		phonenumber.setColumns(10);
 		
 		passwordField = new JPasswordField();
 		passwordField.setBounds(31, 299, 388, 42);
@@ -117,32 +127,22 @@ public class LogIn extends JFrame {
 		JButton btnNewButton = new JButton("Log In");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-                    Class.forName(driver);
-                    con = DriverManager.getConnection(url,username,password);
-                    String sql ="SELECT * FROM \"user\""
-                            + "WHERE \"phonenumber\" = ? AND \"password\"= ?;";
-                    PreparedStatement ps = con.prepareStatement(sql);
-                    ps.setString(1, textField.getText());
-                    ps.setString(2, passwordField.getText());
-                    rs= ps.executeQuery();
+				String phone= phonenumber.getText().trim();
+				String pass = new String(passwordField.getPassword());
+				if (phone.isEmpty() || pass.isEmpty()) {
+					 JOptionPane.showMessageDialog(null, "Username and Password cannot be empty.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+			            return;			
+			      }
 
-                    if(textField.getText().equals("") || passwordField.getText().equals("")) {
-                        JOptionPane.showMessageDialog( null,"Please enter both username and password.");
-                    } else if (rs.next()) {
-                    	Home sw = new Home();
-                        sw.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                        sw.setVisible(true);
-                        dispose(); // 
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Incorrect username or password!");
-                    }
-                } catch (Exception e2) {
-                    e2.printStackTrace();
-                }
+		        boolean isLoggedIn = validateLogin(username, password);
+		        if (isLoggedIn) {
+		            JOptionPane.showMessageDialog(null, "Logged in successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+		            new Home().setVisible(true);
+		            dispose();
+		        } else {
+	                JOptionPane.showMessageDialog(null, "Incorrect username or password. Please try again.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+	            }
             }
-				
-				
 			
 		});
 		btnNewButton.setBackground(new Color(0, 204, 255));
@@ -170,4 +170,22 @@ public class LogIn extends JFrame {
 		lblNewLabel.setForeground(new Color(59, 178, 213));
 		lblNewLabel.setIcon(new ImageIcon("/Users/mac/Downloads/46-1.png"));
 	}
+	private boolean validateLogin(String username, String password) {
+        try (Socket socket = new Socket("192.168.1.23", 12345);
+             OutputStream output = socket.getOutputStream();
+             ObjectOutputStream objectOutput = new ObjectOutputStream(output);
+             InputStream input = socket.getInputStream();
+             ObjectInputStream objectInput = new ObjectInputStream(input)) {
+
+            objectOutput.writeObject(new String[]{"login", username, password});
+            objectOutput.flush();
+
+            return objectInput.readBoolean();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+	 
 }

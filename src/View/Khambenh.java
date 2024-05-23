@@ -51,13 +51,12 @@ public class Khambenh extends JFrame {
     private JComboBox<String> Blood;
     private JPanel panel;
     private String infor;
-
-   
+    
 
     public Khambenh(String infor) {
         setTitle("Thông tin chi tiết");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setBounds(100, 100, 1235, 830);
         contentPane = new JPanel();
         contentPane.setBackground(Color.WHITE);
