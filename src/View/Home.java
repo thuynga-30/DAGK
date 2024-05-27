@@ -17,17 +17,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.System.Logger;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.sql.ClientInfoStatus;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.swing.border.MatteBorder;
@@ -58,11 +63,13 @@ public class Home extends JFrame {
     private JTextField year;
     private JTextField name;
     private JButton btnSave;
+    private PrintWriter out;
     String anh="";
     String driver ="org.postgresql.Driver";
     String url = "jdbc:postgresql://localhost:5432/Java" ;
     String username= "postgres" ;
     String password = "123" ;
+    String phoneString;
     Connection con ;
     ResultSet rs;
     Statement st;
@@ -70,7 +77,19 @@ public class Home extends JFrame {
     private JScrollPane scrollPane;
     private JTextField textField;
     private JButton btnNewButton;
+    private JTextArea textArea;
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+               Home frame = new Home();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
     public Home() {
+    	
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         contentPane = new JPanel();
@@ -95,7 +114,7 @@ public class Home extends JFrame {
                 home.setVisible(true);
                 profile.setVisible(false);
                 phr.setVisible(false); 
-                contact.setVisible(true);
+                contact.setVisible(false);
             }
         });
         btnHome.setBounds(62, 333, 188, 59);
@@ -106,9 +125,10 @@ public class Home extends JFrame {
         btnPhr.setBackground(new Color(255, 255, 255));
         btnPhr.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                home.setVisible(false);
+            	home.setVisible(false);
                 profile.setVisible(false);
                 phr.setVisible(true); 
+                contact.setVisible(false);
             }
         });
         btnPhr.setBounds(62, 513, 188, 59);
@@ -119,9 +139,10 @@ public class Home extends JFrame {
         btnProfile.setBackground(new Color(255, 255, 255));
         btnProfile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                home.setVisible(false);
+            	home.setVisible(false);
                 profile.setVisible(true);
-                phr.setVisible(false);
+                phr.setVisible(false); 
+                contact.setVisible(false);
             }
         });
         btnProfile.setBounds(62, 428, 188, 59);
@@ -201,8 +222,32 @@ public class Home extends JFrame {
         JButton btnContact = new JButton("CONTACT");
         btnContact.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        	}
+        		home.setVisible(false);
+                profile.setVisible(false);
+                phr.setVisible(false); 
+                contact.setVisible(true);
+                String userName;
+                userName = getUserNameFromDatabase();
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                        	Socket socket = new Socket("localhost", 12345);
+                        	out = new PrintWriter(socket.getOutputStream(), true);
+                        	out.println(userName);
+                            textArea.append("Đã kết nối tới  quản lý \n");
+                            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                            String serverMessage;
+                            while ((serverMessage = in.readLine()) != null) {
+                                textArea.append("Manager: " + serverMessage + "\n");
+                            }
+                        } catch (IOException e) {
+                            textArea.append("Lỗi: " + e.getMessage() + "\n");
+                        }
+                    }
+                }).start();
+        	} 
         });
+        
         btnContact.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnContact.setBackground(Color.WHITE);
         btnContact.setBounds(62, 604, 188, 59);
@@ -346,7 +391,7 @@ public class Home extends JFrame {
         scrollPane.setBounds(0, 10, 1239, 673);
         contact.add(scrollPane);
         
-        JTextArea textArea = new JTextArea();
+        textArea = new JTextArea();
         scrollPane.setViewportView(textArea);
         
         textField = new JTextField();
@@ -355,6 +400,16 @@ public class Home extends JFrame {
         contact.add(textField);
         
         btnNewButton = new JButton("SEND");
+        btnNewButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		 String message = textField.getText();
+                 textArea.append("You : " + message + "\n"); // Thêm userName vào tin nhắn
+                 out.println(message);
+                 textField.setText("");
+        	}
+        });
+       
+    
         btnNewButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
         btnNewButton.setBounds(1007, 693, 140, 68);
         contact.add(btnNewButton);
@@ -457,7 +512,7 @@ public class Home extends JFrame {
         	public void mouseClicked(MouseEvent e) {
         		int selectedRow = phrTable.getSelectedRow();
                 if (selectedRow != -1) {
-                	  String info = (String) phrTable.getValueAt(selectedRow, 0);
+                	String info = (String) phrTable.getValueAt(selectedRow, 0);
                     Khambenh frameKhambenh= new Khambenh(info);
                     frameKhambenh.setVisible(true);
                 }
@@ -622,5 +677,25 @@ public class Home extends JFrame {
             }
             return lbl;
         }
+    }
+    public  String getUserNameFromDatabase() {
+        String url = "jdbc:postgresql://172.20.10.7:5432/Java"; 
+        String user = "postrgres"; 
+        String password = "123"; 
+        String query = "SELECT \"fullname\" FROM \"user\" WHERE \"phonenumber\" = ?"; // Adjust the query as needed
+
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(2, "phonenumber");; // Replace 1 with the actual user id or parameter needed
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getString("fullname");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
